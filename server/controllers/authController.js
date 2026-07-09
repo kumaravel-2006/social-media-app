@@ -1,80 +1,44 @@
-import bcrypt from "bcryptjs";
+import User from "../models/User.js";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js"; // Import our database User blueprint
 
-export const registerUser = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "All fields are required!" });
+    if (!username || !email || !password || password.length < 6) {
+      return res.status(400).json({ message: "Invalid inputs or password too short." });
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res
-        .status(400)
-        .json({ message: "User with this email already exists!" });
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username or Email already exists." });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-    });
+    const newUser = new User({ username, email, password: hashedPassword });
+    await newUser.save();
 
-    res.status(201).json({
-      message: "User registered successfully! 🎉",
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-      },
-    });
+    res.status(201).json({ message: "User registered successfully! 🎉" });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error occurred: " + error.message });
+    res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 
-export const loginUser = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Please fill in all fields." });
-    }
-
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password." });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid credentials." });
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.status(400).json({ message: "Invalid email or password." });
-    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials." });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.status(200).json({
-      message: "Login successful! Welcome back. 🎉",
-      token: token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
-    });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.status(200).json({ token, user: { id: user._id, username: user.username } });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error occurred: " + error.message });
+    res.status(500).json({ message: "Server error: " + error.message });
   }
 };

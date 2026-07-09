@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const postSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "User", 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
         required: true
     },
     desc: {
@@ -12,16 +12,19 @@ const postSchema = new mongoose.Schema({
         trim: true
     },
     img: {
-        type: String, 
+        type: String,
         default: ""
     },
     likes: {
-        type: Array, 
+        type: Array,
         default: []
     }
-}, { 
-    timestamps: true 
+}, {
+    timestamps: true
 });
+
+postSchema.index({ userId: 1, createdAt: -1 });
+
 
 const Post = mongoose.model("Post", postSchema);
 

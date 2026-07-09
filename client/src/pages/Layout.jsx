@@ -2,11 +2,11 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { dummyUserData } from "../assets/assets";
+import { useAuth } from "../context/AuthContext";
 import Loading from "../components/Loading";
 
 const Layout = () => {
-  const user = dummyUserData;
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return user ? (

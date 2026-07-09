@@ -24,6 +24,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    coverPicture: {
+      type: String,
+      default: ""
+    },
+    bio: {
+      type: String,
+      maxlength: [160, "Bio cannot exceed 160 characters"],
+      default: ""
+    },
     followers: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "User",
